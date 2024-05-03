@@ -1,204 +1,264 @@
-// Define HTML elements
-const board = document.getElementById('game-board');
-const instructionText = document.getElementById('instruction-text');
-const logo = document.getElementById('logo');
-const score = document.getElementById('score');
-const highScoreText = document.getElementById('highScore');
+document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.querySelector('.grid')
+    let squares = Array.from(document.querySelectorAll('.grid div'))
+    const scoreDisplay = document.querySelector('#score')
+    const startBtn = document.querySelector('#start-button')
+    const width = 10
+    let nextRandom = 0
+    let timerId = 900
+    let score = 0
+    const colors = [
+        'orange',
+        'red',
+        'purple',
+        'green',
+        'blue'
+    ]
 
-// Define game variables
-const gridSize = 20;
-let snake = [{ x: 10, y: 10 }];
-let food = generateFood();
-let highScore = 0;
-let direction = 'right';
-let gameInterval;
-let gameSpeedDelay = 200;
-let gameStarted = false;
+    //The Tetrominoes
+    const lTetromino = [
+        [1, width + 1, width * 2 + 1, 2],
+        [width, width + 1, width + 2, width * 2 + 2],
+        [1, width + 1, width * 2 + 1, width * 2],
+        [width, width * 2, width * 2 + 1, width * 2 + 2]
+    ]
 
-// Draw game map, snake, food
-function draw() {
-  board.innerHTML = '';
-  drawSnake();
-  drawFood();
-  updateScore();
-}
+    const zTetromino = [
+        [0, width, width + 1, width * 2 + 1],
+        [width + 1, width + 2, width * 2, width * 2 + 1],
+        [0, width, width + 1, width * 2 + 1],
+        [width + 1, width + 2, width * 2, width * 2 + 1]
+    ]
 
-// Draw snake
-function drawSnake() {
-  snake.forEach((segment) => {
-    const snakeElement = createGameElement('div', 'snake');
-    setPosition(snakeElement, segment);
-    board.appendChild(snakeElement);
-  });
-}
+    const tTetromino = [
+        [1, width, width + 1, width + 2],
+        [1, width + 1, width + 2, width * 2 + 1],
+        [width, width + 1, width + 2, width * 2 + 1],
+        [1, width, width + 1, width * 2 + 1]
+    ]
 
-// Create a snake or food cube/div
-function createGameElement(tag, className) {
-  const element = document.createElement(tag);
-  element.className = className;
-  return element;
-}
+    const oTetromino = [
+        [0, 1, width, width + 1],
+        [0, 1, width, width + 1],
+        [0, 1, width, width + 1],
+        [0, 1, width, width + 1]
+    ]
 
-// Set the position of snake or food
-function setPosition(element, position) {
-  element.style.gridColumn = position.x;
-  element.style.gridRow = position.y;
-}
+    const iTetromino = [
+        [1, width + 1, width * 2 + 1, width * 3 + 1],
+        [width, width + 1, width + 2, width + 3],
+        [1, width + 1, width * 2 + 1, width * 3 + 1],
+        [width, width + 1, width + 2, width + 3]
+    ]
 
-// Testing draw function
-// draw();
+    const theTetrominoes = [lTetromino, zTetromino, tTetromino, oTetromino, iTetromino]
 
-// Draw food function
-function drawFood() {
-  if (gameStarted) {
-    const foodElement = createGameElement('div', 'food');
-    setPosition(foodElement, food);
-    board.appendChild(foodElement);
-  }
-}
+    let currentPosition = 4
+    let currentRotation = 0
 
-// Generate food
-function generateFood() {
-  const x = Math.floor(Math.random() * gridSize) + 1;
-  const y = Math.floor(Math.random() * gridSize) + 1;
-  return { x, y };
-}
+    console.log(theTetrominoes[0][0])
 
-// Moving the snake
-function move() {
-  const head = { ...snake[0] };
-  switch (direction) {
-    case 'up':
-      head.y--;
-      break;
-    case 'down':
-      head.y++;
-      break;
-    case 'left':
-      head.x--;
-      break;
-    case 'right':
-      head.x++;
-      break;
-  }
+    //randomly select a Tetromino and its first rotation
+    let random = Math.floor(Math.random() * theTetrominoes.length)
+    let current = theTetrominoes[random][currentRotation]
 
-  snake.unshift(head);
-
-  //   snake.pop();
-
-  if (head.x === food.x && head.y === food.y) {
-    food = generateFood();
-    increaseSpeed();
-    clearInterval(gameInterval); // Clear past interval
-    gameInterval = setInterval(() => {
-      move();
-      checkCollision();
-      draw();
-    }, gameSpeedDelay);
-  } else {
-    snake.pop();
-  }
-}
-
-// Test moving
-// setInterval(() => {
-//   move(); // Move first
-//   draw(); // Then draw again new position
-// }, 200);
-
-// Start game function
-function startGame() {
-  gameStarted = true; // Keep track of a running game
-  instructionText.style.display = 'none';
-  logo.style.display = 'none';
-  gameInterval = setInterval(() => {
-    move();
-    checkCollision();
-    draw();
-  }, gameSpeedDelay);
-}
-
-// Keypress event listener
-function handleKeyPress(event) {
-  if (
-    (!gameStarted && event.code === 'Space') ||
-    (!gameStarted && event.key === ' ')
-  ) {
-    startGame();
-  } else {
-    switch (event.key) {
-      case 'ArrowUp':
-        direction = 'up';
-        break;
-      case 'ArrowDown':
-        direction = 'down';
-        break;
-      case 'ArrowLeft':
-        direction = 'left';
-        break;
-      case 'ArrowRight':
-        direction = 'right';
-        break;
+    //draw the Tetromino
+    function draw() {
+        current.forEach(index => {
+            squares[currentPosition + index].classList.add('tetromino')
+            squares[currentPosition + index].style.backgroundColor = colors[random]
+        })
     }
-  }
-}
 
-document.addEventListener('keydown', handleKeyPress);
+    //undraw the Tetromino
+    function undraw() {
+        current.forEach(index => {
+            squares[currentPosition + index].classList.remove('tetromino')
+            squares[currentPosition + index].style.backgroundColor = ''
 
-function increaseSpeed() {
-  //   console.log(gameSpeedDelay);
-  if (gameSpeedDelay > 150) {
-    gameSpeedDelay -= 5;
-  } else if (gameSpeedDelay > 100) {
-    gameSpeedDelay -= 3;
-  } else if (gameSpeedDelay > 50) {
-    gameSpeedDelay -= 2;
-  } else if (gameSpeedDelay > 25) {
-    gameSpeedDelay -= 1;
-  }
-}
-
-function checkCollision() {
-  const head = snake[0];
-
-  if (head.x < 1 || head.x > gridSize || head.y < 1 || head.y > gridSize) {
-    resetGame();
-  }
-
-  for (let i = 1; i < snake.length; i++) {
-    if (head.x === snake[i].x && head.y === snake[i].y) {
-      resetGame();
+        })
     }
-  }
-}
 
-function resetGame() {
-  updateHighScore();
-  stopGame();
-  snake = [{ x: 10, y: 10 }];
-  food = generateFood();
-  direction = 'right';
-  gameSpeedDelay = 200;
-  updateScore();
-}
+    //assign functions to keyCodes
+    function control(e) {
+        if (e.keyCode === 37) {
+            moveLeft()
+        } else if (e.keyCode === 38) {
+            rotate()
+        } else if (e.keyCode === 39) {
+            moveRight()
+        } else if (e.keyCode === 40) {
+            moveDown()
+        }
+    }
+    document.addEventListener('keyup', control)
+    
 
-function updateScore() {
-  const currentScore = snake.length - 1;
-  score.textContent = currentScore.toString().padStart(3, '0');
-}
+    //move down function
+    function moveDown() {
+        undraw()
+        currentPosition += width
+        draw()
+        freeze()
+    }
 
-function stopGame() {
-  clearInterval(gameInterval);
-  gameStarted = false;
-  instructionText.style.display = 'block';
-  logo.style.display = 'block';
-}
+    //freeze function
+    function freeze() {
+        if (current.some(index => squares[currentPosition + index + width].classList.contains('taken'))) {
+            current.forEach(index => squares[currentPosition + index].classList.add('taken'))
+            //start a new tetromino falling
+            random = nextRandom
+            nextRandom = Math.floor(Math.random() * theTetrominoes.length)
+            current = theTetrominoes[random][currentRotation]
+            currentPosition = 4
+            draw()
+            displayShape()
+            addScore()
+            gameOver()
+        }
+    }
 
-function updateHighScore() {
-  const currentScore = snake.length - 1;
-  if (currentScore > highScore) {
-    highScore = currentScore;
-    highScoreText.textContent = highScore.toString().padStart(3, '0');
-  }
-  highScoreText.style.display = 'block';
-}
+    //move the tetromino left, unless is at the edge or there is a blockage
+    function moveLeft() {
+        undraw()
+        const isAtLeftEdge = current.some(index => (currentPosition + index) % width === 0)
+        if (!isAtLeftEdge) currentPosition -= 1
+        if (current.some(index => squares[currentPosition + index].classList.contains('taken'))) {
+            currentPosition += 1
+        }
+        draw()
+    }
+
+    //move the tetromino right, unless is at the edge or there is a blockage
+    function moveRight() {
+        undraw()
+        const isAtRightEdge = current.some(index => (currentPosition + index) % width === width - 1)
+        if (!isAtRightEdge) currentPosition += 1
+        if (current.some(index => squares[currentPosition + index].classList.contains('taken'))) {
+            currentPosition -= 1
+        }
+        draw()
+    }
+
+
+    ///FIX ROTATION OF TETROMINOS A THE EDGE 
+    function isAtRight() {
+        return current.some(index => (currentPosition + index + 1) % width === 0)
+    }
+
+    function isAtLeft() {
+        return current.some(index => (currentPosition + index) % width === 0)
+    }
+
+    function checkRotatedPosition(P) {
+        P = P || currentPosition //get current position.  Then, check if the piece is near the left side.
+        if ((P + 1) % width < 4) { //add 1 because the position index can be 1 less than where the piece is (with how they are indexed).     
+            if (isAtRight()) { //use actual position to check if it's flipped over to right side
+                currentPosition += 1 //if so, add one to wrap it back around
+                checkRotatedPosition(P) //check again.  Pass position from start, since long block might need to move more.
+            }
+        } else if (P % width > 5) {
+            if (isAtLeft()) {
+                currentPosition -= 1
+                checkRotatedPosition(P)
+            }
+        }
+    }
+
+    //rotate the tetromino
+    function rotate() {
+        undraw()
+        currentRotation++
+        if (currentRotation === current.length) { //if the current rotation gets to 4, make it go back to 0
+            currentRotation = 0
+        }
+        current = theTetrominoes[random][currentRotation]
+        checkRotatedPosition()
+        draw()
+    }
+    /////////
+
+
+
+    //show up-next tetromino in mini-grid display
+    const displaySquares = document.querySelectorAll('.mini-grid div')
+    const displayWidth = 4
+    const displayIndex = 0
+
+
+    //the Tetrominos without rotations
+    const upNextTetrominoes = [
+        [1, displayWidth + 1, displayWidth * 2 + 1, 2], //lTetromino
+        [0, displayWidth, displayWidth + 1, displayWidth * 2 + 1], //zTetromino
+        [1, displayWidth, displayWidth + 1, displayWidth + 2], //tTetromino
+        [0, 1, displayWidth, displayWidth + 1], //oTetromino
+        [1, displayWidth + 1, displayWidth * 2 + 1, displayWidth * 3 + 1] //iTetromino
+    ]
+
+    //display the shape in the mini-grid display
+    function displayShape() {
+        //remove any trace of a tetromino form the entire grid
+        displaySquares.forEach(square => {
+            square.classList.remove('tetromino')
+            square.style.backgroundColor = ''
+        })
+        upNextTetrominoes[nextRandom].forEach(index => {
+            displaySquares[displayIndex + index].classList.add('tetromino')
+            displaySquares[displayIndex + index].style.backgroundColor = colors[nextRandom]
+        })
+    }
+
+    //add functionality to the button
+    startBtn.addEventListener('click', () => {
+        if (timerId) {
+            clearInterval(timerId)
+            timerId = null
+        } else {
+            draw()
+            timerId = setInterval(moveDown, 1000)
+            nextRandom = Math.floor(Math.random() * theTetrominoes.length)
+            displayShape()
+        }
+    })
+
+    //add score
+    function addScore() {
+        for (let i = 0; i < 199; i += width) {
+            const row = [i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7, i + 8, i + 9]
+
+            if (row.every(index => squares[index].classList.contains('taken'))) {
+                score += 10
+                scoreDisplay.innerHTML = score
+                row.forEach(index => {
+                    squares[index].classList.remove('taken')
+                    squares[index].classList.remove('tetromino')
+                    squares[index].style.backgroundColor = ''
+                })
+                const squaresRemoved = squares.splice(i, width)
+                squares = squaresRemoved.concat(squares)
+                squares.forEach(cell => grid.appendChild(cell))
+            }
+        }
+    }
+
+    //game over
+    function gameOver() {
+        if (current.some(index => squares[currentPosition + index].classList.contains('taken'))) {
+            scoreDisplay.innerHTML = 'end'
+            clearInterval(timerId)
+        }
+    }
+
+    //game over
+    function gameOver() {
+        if (current.some(index => squares[currentPosition + index].classList.contains('taken'))) {
+            scoreDisplay.innerHTML = 'end'
+            clearInterval(timerId)
+        }
+
+    }
+
+
+
+
+})
